@@ -4,34 +4,38 @@ const Url = require("../models/url.model");
 const { nanoid } = require("nanoid");
 
 // POST - create short URL
-router.post("/shorten", async (req, res) => {
-  const { originalUrl } = req.body;
+router.post('/shorten', async (req, res) => {
+  const { originalUrl, expireInDays } = req.body;
 
-  if (!originalUrl) return res.status(400).json({ error: "URL is required" });
+  if (!originalUrl) return res.status(400).json({ error: 'URL is required' });
 
-  const shortId = nanoid(6); // e.g., abc123
+  const shortId = nanoid(6);
+  const expiresAt = new Date();
+  expiresAt.setDate(expiresAt.getDate() + (expireInDays || 7)); // default: 7 days
 
   try {
-    const newUrl = new Url({ originalUrl, shortId });
+    const newUrl = new Url({ originalUrl, shortId, expiresAt });
     await newUrl.save();
-    res.json({ shortUrl: `${req.protocol}://${req.get("host")}/${shortId}` });
+    res.json({ shortUrl: `${req.protocol}://${req.get('host')}/${shortId}`, expiresAt });
   } catch (err) {
-    res.status(500).json({ error: "Something went wrong" });
+    res.status(500).json({ error: 'Something went wrong' });
   }
 });
 
+
 // GET - redirect to original URL
-router.get("/:shortId", async (req, res) => {
+router.get('/:shortId', async (req, res) => {
   const { shortId } = req.params;
   try {
     const url = await Url.findOne({ shortId });
-    if (url) {
-      res.redirect(url.originalUrl);
-    } else {
-      res.status(404).json({ error: "URL not found" });
+
+    if (!url) {
+      return res.status(404).json({ error: 'URL not found or expired' });
     }
+
+    res.redirect(url.originalUrl);
   } catch (err) {
-    res.status(500).json({ error: "Something went wrong" });
+    res.status(500).json({ error: 'Something went wrong' });
   }
 });
 
