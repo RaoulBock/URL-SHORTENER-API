@@ -27,6 +27,6 @@ Supports custom short URLs that automatically expire after a specified time — 
 ## 📦 Installation
 
 ```bash
-git clone https://github.com/your-username/url-shortener.git
+git clone https://github.com/raoulbock/url-shortener.git
 cd url-shortener
 npm install
